@@ -4,11 +4,10 @@ import mediumZoom from '@fisch0920/medium-zoom'
 import React, { useEffect, useRef } from 'react'
 // import { Code } from 'react-notion-x/build/third-party/code'
 import TweetEmbed from 'react-tweet-embed'
-
 import 'katex/dist/katex.min.css'
 import { mapImgUrl } from '@/lib/notion/mapImage'
-import BLOG from '@/blog.config'
 import { isBrowser } from '@/lib/utils'
+import { siteConfig } from '@/lib/config'
 
 const Code = dynamic(() =>
   import('react-notion-x/build/third-party/code').then(async (m) => {
@@ -63,9 +62,9 @@ const NotionPage = ({ post, className }) => {
 
   useEffect(() => {
     // 将相册gallery下的图片加入放大功能
-    if (JSON.parse(BLOG.POST_DISABLE_GALLERY_CLICK)) {
+    if (siteConfig('POST_DISABLE_GALLERY_CLICK')) {
       setTimeout(() => {
-        if (isBrowser()) {
+        if (isBrowser) {
           const imgList = document?.querySelectorAll('.notion-collection-card-cover img')
           if (imgList && zoomRef.current) {
             for (let i = 0; i < imgList.length; i++) {
@@ -80,13 +79,32 @@ const NotionPage = ({ post, className }) => {
         }
       }, 800)
     }
+
+    /**
+     * 处理页面内连接跳转
+     * 如果链接就是当前网站，则不打开新窗口访问
+     */
+    if (isBrowser) {
+      const currentURL = window.location.origin + window.location.pathname
+      const allAnchorTags = document.getElementsByTagName('a') // 或者使用 document.querySelectorAll('a') 获取 NodeList
+      for (const anchorTag of allAnchorTags) {
+        if (anchorTag?.target === '_blank') {
+          const hrefWithoutQueryHash = anchorTag.href.split('?')[0].split('#')[0]
+          const hrefWithRelativeHash = currentURL.split('#')[0] + anchorTag.href.split('#')[1]
+
+          if (currentURL === hrefWithoutQueryHash || currentURL === hrefWithRelativeHash) {
+            anchorTag.target = '_self'
+          }
+        }
+      }
+    }
   }, [])
 
   if (!post || !post.blockMap) {
     return <>{post?.summary || ''}</>
   }
 
-  return <div id='notion-article' className={`mx-auto ${className || ''}`}>
+  return <div id='notion-article' className={`mx-auto overflow-hidden ${className || ''}`}>
     <NotionRenderer
       recordMap={post.blockMap}
       mapPageUrl={mapPageUrl}

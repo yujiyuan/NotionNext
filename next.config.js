@@ -90,13 +90,19 @@ module.exports = withBundleAnalyzer({
     //     'react-dom': 'preact/compat'
     //   })
     // }
-
     // 动态主题：添加 resolve.alias 配置，将动态路径映射到实际路径
+    console.log('加载默认主题', path.resolve(__dirname, 'themes', THEME))
     config.resolve.alias['@theme-components'] = path.resolve(__dirname, 'themes', THEME)
     return config
   },
   experimental: {
     scrollRestoration: true
+  },
+  exportPathMap: async function (defaultPathMap, { dev, dir, outDir, distDir, buildId }) {
+    // 导出时 忽略/pages/sitemap.xml.js ， 否则报错getServerSideProps
+    const pages = { ...defaultPathMap }
+    delete pages['/sitemap.xml']
+    return pages
   },
   publicRuntimeConfig: { // 这里的配置既可以服务端获取到，也可以在浏览器端获取到
     NODE_ENV_API: process.env.NODE_ENV_API || 'prod',
